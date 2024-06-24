@@ -125,10 +125,16 @@ const handleAsset = async (req: NextApiRequest, res: NextApiResponse): Promise<v
 
   // handle request
   const assetPath = path.join(getPackagePath() as string, req.query.path as string)
-  const data = await fs.promises.readFile(assetPath)
-  const options = { 'Content-Type': 'image/png', 'Content-Length': data.length }
-  res.writeHead(200, options)
-  res.end(data, 'binary')
+
+  try {
+    const data = await fs.promises.readFile(assetPath)
+    const options = { 'Content-Type': 'image/png', 'Content-Length': data.length }
+    res.writeHead(200, options)
+    res.end(data, 'binary')
+  }catch(err) {
+    console.log(err);
+    return res.status(500).json({ error: 'Server error - see console' })
+  }
 }
 
 const handleTheme = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
@@ -140,16 +146,22 @@ const handleTheme = async (req: NextApiRequest, res: NextApiResponse): Promise<v
   // handle request
   const themeName = req.query.name as string
   const folderPath = path.join(getPackagePath() as string, 'themes', themeName)
-  const componentNames = await fs.promises
-    .readdir(folderPath)
-    .then((f) => f.filter((c) => c !== 'index.ts' && !c.startsWith('.')))
-  const componentsP = componentNames.map(async (c) => {
-    const assetPath = path.join(folderPath, c, 'index.html')
-    const source = await fs.promises.readFile(assetPath, 'utf-8')
-    return { source, folder: c }
-  })
-  const components = await Promise.all(componentsP)
-  res.json(components)
+
+  try {
+    const componentNames = await fs.promises
+      .readdir(folderPath)
+      .then((f) => f.filter((c) => c !== 'index.ts' && !c.startsWith('.')))
+    const componentsP = componentNames.map(async (c) => {
+      const assetPath = path.join(folderPath, c, 'index.html')
+      const source = await fs.promises.readFile(assetPath, 'utf-8')
+      return { source, folder: c }
+    })
+    const components = await Promise.all(componentsP)
+    res.json(components)
+  }catch(err) {
+    console.log(err);
+    return res.status(500).json({ error: 'Server error - see console' })
+  }
 }
 
 const handleEditor = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
